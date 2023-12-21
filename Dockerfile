@@ -10,7 +10,12 @@ RUN apt-get install -y libupnp-dev libgstreamer1.0-dev \
 RUN apt-get install -y gstreamer1.0-alsa
 RUN apt-get install -y gstreamer1.0-pulseaudio
 
+RUN apt-get install -y --no-install-recommends alsa-utils
+RUN apt-get install -y --no-install-recommends pulseaudio-utils
+
 RUN apt-get install -y git
+
+RUN apt-get install -y uuid-runtime
 
 RUN mkdir -p /app/source
 WORKDIR /app/source
@@ -24,18 +29,37 @@ RUN ./configure
 RUN make
 RUN make install
 
-FROM debian:stable-slim AS INTERMEDIATE
-COPY --from=BASE /usr/local/bin/gmediarender /usr/local/bin/gmediarender
+WORKDIR /
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends alsa-utils
-RUN apt-get install -y --no-install-recommends pulseaudio-utils
+RUN rm -rf /app/source
+
+RUN apt-get remove -y build-essential autoconf automake libtool pkg-config
+RUN apt-get remove -y git
+
+RUN apt-get autoremove -y
+
 RUN rm -rf /var/lib/apt/lists/*
 
 FROM scratch
-COPY --from=INTERMEDIATE / /
+COPY --from=BASE / /
 
 LABEL maintainer="GioF71"
 LABEL source="https://github.com/GioF71/gmrenderer-resurrect-docker"
 
+VOLUME /config
+
+ENV FRIENDLY_NAME ""
+ENV UUID ""
+ENV GSTOUT_AUDIOSINK ""
+ENV GSTOUT_AUDIODEVICE ""
+
+ENV PUID ""
+ENV PGID ""
+ENV AUDIO_GID ""
+
+RUN mkdir -p /app/bin
+COPY app/bin/run.sh /app/bin
+RUN chmod 755 /app/bin/*sh
+
+ENTRYPOINT ["/app/bin/run.sh"]
 
