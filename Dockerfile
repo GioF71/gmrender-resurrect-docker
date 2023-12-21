@@ -53,9 +53,12 @@ ENV UUID ""
 ENV GSTOUT_AUDIOSINK ""
 ENV GSTOUT_AUDIODEVICE ""
 
+ENV USER_MODE ""
 ENV PUID ""
 ENV PGID ""
 ENV AUDIO_GID ""
+
+ENV ALSA_DEVICE ""
 
 RUN mkdir -p /app/bin
 COPY app/bin/run.sh /app/bin
