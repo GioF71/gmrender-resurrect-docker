@@ -123,6 +123,7 @@ if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^
         if [[ -n "${AUDIO_GID}" ]]; then
             create_audio_gid
         fi
+        chown -R $PUID:$PGID /config
         ## PulseAudio
         PULSE_CLIENT_CONF="/etc/pulse/client.conf"
         echo "Creating pulseaudio configuration file $PULSE_CLIENT_CONF..."
@@ -208,9 +209,9 @@ if [[ -n "${UUID}" ]]; then
     CMD_LINE="$CMD_LINE -u "$(quote_if_needed "${UUID}")
 fi
 
-if [[ -z "${GSTOUT_AUDIOSINK}" ]] || [[ "${GSTOUT_AUDIOSINK^^}" == "ALSA" ]]; then
+if [[ -z "${GSTOUT_AUDIOSINK}" ]] || [[ "${GSTOUT_AUDIOSINK^^}" == "ALSA" || "${GSTOUT_AUDIOSINK^^}" == "ALSASINK" ]]; then
     CMD_LINE="$CMD_LINE --gstout-audiosink=alsasink"
-elif [[ "${GSTOUT_AUDIOSINK^^}" == "PULSE" ]]; then
+elif [[ "${GSTOUT_AUDIOSINK^^}" == "PULSE" || "${GSTOUT_AUDIOSINK^^}" == "PULSESINK" ]]; then
     CMD_LINE="$CMD_LINE --gstout-audiosink=pulsesink"
 else
     echo "Invalid value for GSTOUT_AUDIOSINK=[${GSTOUT_AUDIOSINK}]"

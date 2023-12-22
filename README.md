@@ -4,13 +4,76 @@ A docker image for [gmrender-resurrect](https://github.com/hzeller/gmrender-resu
 
 ## References
 
+This is based on [this project](https://github.com/hzeller/gmrender-resurrect) by [hzeller](https://github.com/hzeller).  
+
 ## Links
+
+REPOSITORY|DESCRIPTION
+:---|:---
+Source code|[GitHub](https://github.com/GioF71/gmrender-resurrect-docker)
+Docker images|[Docker Hub](https://hub.docker.com/r/giof71/gmrender-resurrect)
 
 ## Build
 
+Simply build the docker image running the provided script `build.sh`:
+
+```text
+./build.sh
+```
+
 ## Configuration
 
+### Environment Variables
+
+NAME|DESCRIPTION
+:---|:---
+FRIENDLY_NAME|Player friendly name
+UUID|Specify the UUID of the player
+GSTOUT_AUDIOSINK|Can be `alsa`, `alsasink`, `pulse`, `pulsesink`, defaults to `alsa`
+GSTOUT_AUDIODEVICE|Specified the audio device. Recommended to user CARD_NAME instead
+GSTOUT_INITIAL_VOLUME_DB|Initial attenuation, in db, example `-10`
+USER_MODE|Run as a user, defaults to `no`
+PUID|Used as the `uid`
+PGID|Used as the `gid`
+AUDIO_GID|Set it to the gid of the `audio` group of the host system if running in user mode with alsa
+CARD_NAME|Specify the alsa card name, example `D10`, `DAC`, `X20`
+CARD_INDEX|Specify the alsa card index
+
+### Volumes
+
+VOLUME|DESCRIPTION
+:---|:---
+/config|Location of the configuration files
+
 ## Run
+
+### Sample alsa compose
+
+A very simple `alsa` configuration:
+
+```text
+---
+version: "3"
+
+volumes:
+  config:
+
+services:
+  renderer:
+    image: giof71/gmrender-resurrect:latest
+    container_name: gmrender-alsa
+    network_mode: host
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - PUID=${PUID:-1000}
+      - AUDIO_GID=${AUDIO_GID:-29}
+      - CARD_NAME=DAC
+      - FRIENDLY_NAME=GMRender (DAC)
+    volumes:
+      - config:/config
+    restart: unless-stopped
+```
 
 ## Changelog
 
