@@ -30,7 +30,7 @@ NAME|DESCRIPTION
 FRIENDLY_NAME|Player friendly name
 UUID|Specify the UUID of the player
 GSTOUT_AUDIOSINK|Can be `alsa`, `alsasink`, `pulse`, `pulsesink`, defaults to `alsa`
-GSTOUT_AUDIODEVICE|Specified the audio device. Recommended to user CARD_NAME instead
+GSTOUT_AUDIODEVICE|Specified the audio device. Recommended to user `CARD_NAME` (or `CARD_INDEX`) instead
 GSTOUT_INITIAL_VOLUME_DB|Initial attenuation, in db, example `-10`
 USER_MODE|Run as a user, defaults to `no`
 PUID|Used as the `uid`
