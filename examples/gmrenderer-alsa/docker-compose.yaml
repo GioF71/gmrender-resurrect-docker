@@ -1,0 +1,16 @@
+---
+version: "3"
+
+services:
+  renderer:
+    image: giof71/gmrender-resurrect:latest
+    container_name: gmrender-alsa
+    network_mode: host
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - PUID=1000
+      - AUDIO_GID=995
+      - CARD_NAME=${CARD_NAME:-}
+      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender}
+      - UUID=115be2a1-fa65-42c0-a00a-492e4a3948a6

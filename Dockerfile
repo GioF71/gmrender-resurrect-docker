@@ -44,7 +44,7 @@ FROM scratch
 COPY --from=BASE / /
 
 LABEL maintainer="GioF71"
-LABEL source="https://github.com/GioF71/gmrenderer-resurrect-docker"
+LABEL source="https://github.com/GioF71/gmrender-resurrect-docker"
 
 VOLUME /config
 
@@ -58,7 +58,11 @@ ENV PUID ""
 ENV PGID ""
 ENV AUDIO_GID ""
 
-ENV ALSA_DEVICE ""
+ENV CARD_NAME ""
+ENV CARD_INDEX ""
+
+RUN mkdir -p /app/assets
+COPY app/assets/pulse-client-template.conf /app/assets/pulse-client-template.conf
 
 RUN mkdir -p /app/bin
 COPY app/bin/run.sh /app/bin

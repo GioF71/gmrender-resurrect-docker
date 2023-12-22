@@ -3,6 +3,20 @@
 # error codes
 # 1 invalid argument
 
+write_audio_config() {
+   card_index=$1
+   if test -f /etc/asound.conf; then
+      truncate -s 0 /etc/asound.conf
+   fi
+   echo "Creating sound configuration file (card_index=$card_index)..."
+   echo "defaults.pcm.card $card_index" >> /etc/asound.conf
+   echo "pcm.!default {" >> /etc/asound.conf
+   echo "  type plug" >> /etc/asound.conf
+   echo "  slave.pcm hw" >> /etc/asound.conf
+   echo "}" >> /etc/asound.conf
+   echo "Sound configuration file created."
+}
+
 function quote_if_needed() {
     var="${1}"
     opt_quote="\""
@@ -41,8 +55,8 @@ fi
 DEFAULT_UID=1000
 DEFAULT_GID=1000
 
-DEFAULT_USER_NAME=gmrenderer-user
-DEFAULT_GROUP_NAME=gmrenderer-user
+DEFAULT_USER_NAME=gmrender-user
+DEFAULT_GROUP_NAME=gmrender-user
 DEFAULT_HOME_DIR=/home/$DEFAULT_USER_NAME
 
 USER_NAME=$DEFAULT_USER_NAME
@@ -50,6 +64,19 @@ GROUP_NAME=$DEFAULT_GROUP_NAME
 HOME_DIR=$DEFAULT_HOME_DIR
 
 echo "USER_MODE=[${USER_MODE}]"
+USE_USER_MODE="N"
+
+# enable user mode if PUID is set
+if [[ -n "${PUID}" ]] && ! [[ "${USER_MODE^^}" == "NO" || "${USER_MODE^^}" == "N" ]]; then
+    USER_MODE=YES
+    if [[ -z "${PGID}" ]]; then
+        PGID=${PUID}
+    fi
+fi
+
+if [[ -z "${USER_MODE}" ]]; then
+    USER_MODE=NO
+fi
 
 if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^} == "N")) ]]; then
     if [[ -z "${USER_MODE}" || "${USER_MODE^^}" == "YES" || "${USER_MODE^^}" == "Y" ]]; then
@@ -93,15 +120,9 @@ if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^
         chown -R $PUID:$PGID $HOME_DIR
         ls -la $HOME_DIR -d
         ls -la $HOME_DIR
-
         if [[ -n "${AUDIO_GID}" ]]; then
             create_audio_gid
         fi
-
-        #chown -R $USER_NAME:$GROUP_NAME /log
-        #chown -R $USER_NAME:$GROUP_NAME /db
-        #chown -R $USER_NAME:$GROUP_NAME /playlists
-
         ## PulseAudio
         PULSE_CLIENT_CONF="/etc/pulse/client.conf"
         echo "Creating pulseaudio configuration file $PULSE_CLIENT_CONF..."
@@ -113,14 +134,35 @@ if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^
     fi
 fi
 
-if [[ -n "${ALSA_DEVICE}" ]]; then
+if [[ -n "${CARD_NAME}" ]] || [[ -n "${CARD_INDEX}" ]]; then
     if [[ $current_user_id -eq 0 ]]; then
         if [ -f "/etc/asound.conf" ]; then
-            echo "File /etc/asound.conf already exists!"
-            exit 3
+            echo "File /etc/asound.conf already exists, we will not be overwriting it."
         else
-            # TODO search
             echo "Creating /etc/asound.conf ..."
+            if [[ -n "${CARD_NAME}" ]]; then
+                echo "Specified CARD_NAME=[$CARD_NAME]"
+                aplay -l | sed 1d | \
+                while read i
+                do
+                    first_word=`echo $i | cut -d " " -f 1`
+                    if [[ "${first_word}" == "card" ]]; then
+                        second_word=`echo $i | cut -d ":" -f 1`
+                        third_word=`echo $i | cut -d " " -f 3`
+                        card_number=`echo $second_word | cut -d " " -f 2`
+                        if [[ "${third_word}" == "${CARD_NAME}" ]]; then
+                            echo "Found audio device [${CARD_NAME}] as index [$card_number]"
+                            write_audio_config $card_number
+                            break
+                        fi
+                    fi
+                done
+            else
+                # CARD_INDEX has been specified
+                echo "Specified CARD_INDEX=[$CARD_INDEX]"
+                write_audio_config $CARD_INDEX
+            fi
+            cat /etc/asound.conf
         fi
     else
         echo "Cannot set alsa device if not running as root"
@@ -132,6 +174,8 @@ BINARY=/usr/local/bin/gmediarender
 
 #CMD_LINE="$BINARY --logfile=stdout"
 CMD_LINE="$BINARY"
+
+echo "FRIENDLY_NAME=[${FRIENDLY_NAME}]"
 
 if [[ -n "${FRIENDLY_NAME}" ]]; then
     CMD_LINE="$CMD_LINE -f "$(quote_if_needed "${FRIENDLY_NAME}")
@@ -177,10 +221,13 @@ if [[ -n "${GSTOUT_AUDIODEVICE}" ]]; then
     CMD_LINE="$CMD_LINE --gstout-audiodevice="$(quote_if_needed "${GSTOUT_AUDIODEVICE}")
 fi
 
+echo "USE_USER_MODE=[${USE_USER_MODE}]"
 echo "CMD_LINE=[${CMD_LINE}]"
 
-if [[ $current_user_id -ne 0 ]]; then
+if [[ $current_user_id -ne 0 ]] || [[ "${USE_USER_MODE}" == "N" ]]; then
+    echo "Running using uid [$current_user_id]"
     eval $CMD_LINE
 else
+    echo "Running as [$USER_NAME]"
     su - $USER_NAME -c "$CMD_LINE"
 fi
