@@ -221,6 +221,10 @@ if [[ -n "${GSTOUT_AUDIODEVICE}" ]]; then
     CMD_LINE="$CMD_LINE --gstout-audiodevice="$(quote_if_needed "${GSTOUT_AUDIODEVICE}")
 fi
 
+if [[ -n "${GSTOUT_INITIAL_VOLUME_DB}" ]]; then
+    CMD_LINE="$CMD_LINE --gstout-initial-volume-db="$(quote_if_needed "${GSTOUT_INITIAL_VOLUME_DB}")
+fi
+
 echo "USE_USER_MODE=[${USE_USER_MODE}]"
 echo "CMD_LINE=[${CMD_LINE}]"
 

@@ -12,5 +12,7 @@ services:
       - PUID=1000
       - AUDIO_GID=995
       - CARD_NAME=${CARD_NAME:-}
+      - CARD_INDEX=${CARD_INDEX:-}
       - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender}
       - UUID=115be2a1-fa65-42c0-a00a-492e4a3948a6
+      - GSTOUT_INITIAL_VOLUME_DB=${GSTOUT_INITIAL_VOLUME_DB:-}
