@@ -83,4 +83,5 @@ Find a few sample configurations [here](https://github.com/GioF71/gmrender-resur
 
 DATE|DESCRIPTION
 :---|:---
+2025-01-18|Rebuild using upstream version [0.3](https://github.com/hzeller/gmrender-resurrect/releases/tag/v0.3)
 2023-12-22|Initial Release
