@@ -8,8 +8,6 @@ services:
   renderer:
     image: giof71/gmrender-resurrect:latest
     network_mode: host
-    devices:
-      - /dev/snd:/dev/snd
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
