@@ -11,7 +11,7 @@ services:
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender pulse}
+      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender}
       - GSTOUT_INITIAL_VOLUME_DB=${GSTOUT_INITIAL_VOLUME_DB:-}
       - GSTOUT_AUDIOPIPE=audioresample ! audio/x-raw, rate=44100, format=S16LE ! filesink location=/fifo/fifo
     volumes:
