@@ -13,11 +13,9 @@ services:
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - AUDIO_GID=${AUDIO_GID:-29}
-      - CARD_NAME=${CARD_NAME:-}
-      - CARD_INDEX=${CARD_INDEX:-}
-      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender alsa}
+      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender pulse}
       - GSTOUT_INITIAL_VOLUME_DB=${GSTOUT_INITIAL_VOLUME_DB:-}
     volumes:
       - config:/config
+      - /run/user/${PUID:-1000}/pulse:/run/user/${PUID:-1000}/pulse
     restart: unless-stopped

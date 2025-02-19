@@ -13,11 +13,9 @@ services:
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - AUDIO_GID=${AUDIO_GID:-29}
-      - CARD_NAME=${CARD_NAME:-}
-      - CARD_INDEX=${CARD_INDEX:-}
-      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender alsa}
-      - GSTOUT_INITIAL_VOLUME_DB=${GSTOUT_INITIAL_VOLUME_DB:-}
+      - FRIENDLY_NAME=${FRIENDLY_NAME:-gmrender pipe}
+      - GSTOUT_AUDIOPIPE=audioresample ! audio/x-raw, rate=44100, format=S16LE ! filesink location=/fifo/fifo
     volumes:
       - config:/config
+      - /run/user/${PUID:-1000}/pulse:/run/user/${PUID:-1000}/pulse
     restart: unless-stopped

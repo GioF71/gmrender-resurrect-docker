@@ -2,6 +2,7 @@
 
 # error codes
 # 1 invalid argument
+# 2 invalid configuration
 
 write_audio_config() {
    card_index=$1
@@ -130,44 +131,52 @@ if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^
         cp /app/assets/pulse-client-template.conf $PULSE_CLIENT_CONF
         sed -i 's/PUID/'"$PUID"'/g' $PULSE_CLIENT_CONF
         cat $PULSE_CLIENT_CONF
+        chown -R $PUID:$PGID /fifo
     else 
         echo "User mode disabled"
     fi
 fi
 
-if [[ -n "${CARD_NAME}" ]] || [[ -n "${CARD_INDEX}" ]]; then
-    if [[ $current_user_id -eq 0 ]]; then
-        if [ -f "/etc/asound.conf" ]; then
-            echo "File /etc/asound.conf already exists, we will not be overwriting it."
-        else
-            echo "Creating /etc/asound.conf ..."
-            if [[ -n "${CARD_NAME}" ]]; then
-                echo "Specified CARD_NAME=[$CARD_NAME]"
-                aplay -l | sed 1d | \
-                while read i
-                do
-                    first_word=`echo $i | cut -d " " -f 1`
-                    if [[ "${first_word}" == "card" ]]; then
-                        second_word=`echo $i | cut -d ":" -f 1`
-                        third_word=`echo $i | cut -d " " -f 3`
-                        card_number=`echo $second_word | cut -d " " -f 2`
-                        if [[ "${third_word}" == "${CARD_NAME}" ]]; then
-                            echo "Found audio device [${CARD_NAME}] as index [$card_number]"
-                            write_audio_config $card_number
-                            break
-                        fi
-                    fi
-                done
+alsa_mode=0
+if [[ "${GSTOUT_AUDIOSINK}^^" == "ALSA" ]] || [[ "${GSTOUT_AUDIOSINK}^^" == "ALSASINK" ]]; then
+    alsa_mode=1
+fi
+
+if [[ $alsa_mode -eq 1 ]]; then
+    if [[ -n "${CARD_NAME}" ]] || [[ -n "${CARD_INDEX}" ]]; then
+        if [[ $current_user_id -eq 0 ]]; then
+            if [ -f "/etc/asound.conf" ]; then
+                echo "File /etc/asound.conf already exists, we will not be overwriting it."
             else
-                # CARD_INDEX has been specified
-                echo "Specified CARD_INDEX=[$CARD_INDEX]"
-                write_audio_config $CARD_INDEX
+                echo "Creating /etc/asound.conf ..."
+                if [[ -n "${CARD_NAME}" ]]; then
+                    echo "Specified CARD_NAME=[$CARD_NAME]"
+                    aplay -l | sed 1d | \
+                    while read i
+                    do
+                        first_word=`echo $i | cut -d " " -f 1`
+                        if [[ "${first_word}" == "card" ]]; then
+                            second_word=`echo $i | cut -d ":" -f 1`
+                            third_word=`echo $i | cut -d " " -f 3`
+                            card_number=`echo $second_word | cut -d " " -f 2`
+                            if [[ "${third_word}" == "${CARD_NAME}" ]]; then
+                                echo "Found audio device [${CARD_NAME}] as index [$card_number]"
+                                write_audio_config $card_number
+                                break
+                            fi
+                        fi
+                    done
+                else
+                    # CARD_INDEX has been specified
+                    echo "Specified CARD_INDEX=[$CARD_INDEX]"
+                    write_audio_config $CARD_INDEX
+                fi
+                cat /etc/asound.conf
             fi
-            cat /etc/asound.conf
+        else
+            echo "Cannot set alsa device if not running as root"
+            exit 2
         fi
-    else
-        echo "Cannot set alsa device if not running as root"
-        exit 2
     fi
 fi
 
@@ -209,21 +218,53 @@ if [[ -n "${UUID}" ]]; then
     CMD_LINE="$CMD_LINE -u "$(quote_if_needed "${UUID}")
 fi
 
-if [[ -z "${GSTOUT_AUDIOSINK}" ]] || [[ "${GSTOUT_AUDIOSINK^^}" == "ALSA" || "${GSTOUT_AUDIOSINK^^}" == "ALSASINK" ]]; then
-    CMD_LINE="$CMD_LINE --gstout-audiosink=alsasink"
-elif [[ "${GSTOUT_AUDIOSINK^^}" == "PULSE" || "${GSTOUT_AUDIOSINK^^}" == "PULSESINK" ]]; then
-    CMD_LINE="$CMD_LINE --gstout-audiosink=pulsesink"
+if [[ -n "${GSTOUT_AUDIOSINK}" ]] && [[ -n "${GSTOUT_AUDIOPIPE}" ]]; then
+    echo "GSTOUT_AUDIOSINK and GSTOUT_AUDIOPIPE are mutually exclusive, exiting."
+    exit 2
+fi
+
+if [[ -z "${GSTOUT_AUDIOSINK}" ]]; then
+    if [[ -z "${GSTOUT_AUDIOPIPE}" ]]; then
+        echo "Both GSTOUT_AUDIOSINK and GSTOUT_AUDIOPIPE were not specified, so we will use alsasink"
+        CMD_LINE="$CMD_LINE --gstout-audiosink=alsasink"
+    fi
 else
-    echo "Invalid value for GSTOUT_AUDIOSINK=[${GSTOUT_AUDIOSINK}]"
-    exit 1
+    if [[ "${GSTOUT_AUDIOSINK^^}" == "ALSA" ]]; then
+        echo "Using alsa audiosink ..."
+        CMD_LINE="$CMD_LINE --gstout-audiosink=alsa"
+    elif [[ "${GSTOUT_AUDIOSINK^^}" == "ALSASINK" ]]; then
+        echo "Using alsasink audiosink ..."
+        CMD_LINE="$CMD_LINE --gstout-audiosink=alsasink"
+    elif [[ "${GSTOUT_AUDIOSINK^^}" == "PULSE" ]]; then
+        echo "Using pulse audiosink ..."
+        CMD_LINE="$CMD_LINE --gstout-audiosink=pulse"
+    elif [[ "${GSTOUT_AUDIOSINK^^}" == "PULSESINK" ]]; then
+        echo "Using pulsesink audiosink ..."
+        CMD_LINE="$CMD_LINE --gstout-audiosink=pulsesink"
+    else
+        echo "GSTOUT_AUDIOSINK=[${GSTOUT_AUDIOSINK}], just passing it as-is ..."
+        CMD_LINE="$CMD_LINE --gstout-audiosink=${GSTOUT_AUDIOSINK}"
+    fi
 fi
 
 if [[ -n "${GSTOUT_AUDIODEVICE}" ]]; then
     CMD_LINE="$CMD_LINE --gstout-audiodevice="$(quote_if_needed "${GSTOUT_AUDIODEVICE}")
 fi
 
+if [[ -n "${GSTOUT_AUDIOPIPE}" ]]; then
+    CMD_LINE="$CMD_LINE --gstout-audiopipe="$(quote_if_needed "${GSTOUT_AUDIOPIPE}")
+fi
+
 if [[ -n "${GSTOUT_INITIAL_VOLUME_DB}" ]]; then
     CMD_LINE="$CMD_LINE --gstout-initial-volume-db="$(quote_if_needed "${GSTOUT_INITIAL_VOLUME_DB}")
+fi
+
+if [[ -n "${NETWORK_INTERFACE}" ]]; then
+    CMD_LINE="$CMD_LINE -I ${NETWORK_INTERFACE}"
+fi
+
+if [[ -n "${LOGFILE}" ]]; then
+    CMD_LINE="$CMD_LINE --logfile=${LOGFILE}"
 fi
 
 echo "USE_USER_MODE=[${USE_USER_MODE}]"
