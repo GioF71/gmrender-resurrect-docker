@@ -17,5 +17,5 @@ services:
       - GSTOUT_INITIAL_VOLUME_DB=${GSTOUT_INITIAL_VOLUME_DB:-}
     volumes:
       - config:/config
-      - /run/user/${PUID:-1000}/pulse:/run/user/${PUID:-1000}/pulse
+      - ./fifo:/fifo
     restart: unless-stopped
