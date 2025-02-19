@@ -1,4 +1,4 @@
-# Sample docker-compose file for alsa mode
+# Sample docker-compose file for pipe mode
 
 ## Usage
 

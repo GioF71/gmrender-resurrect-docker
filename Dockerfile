@@ -1,21 +1,23 @@
-FROM debian:stable-slim AS BASE
+ARG SELECT_BASE_IMAGE=${BASE_IMAGE:-debian:stable-slim}
+FROM ${SELECT_BASE_IMAGE} AS base
 
 RUN apt-get update
-RUN apt-get install -y build-essential autoconf automake libtool pkg-config
-RUN apt-get install -y libupnp-dev libgstreamer1.0-dev \
+# RUN apt-get install -y build-essential autoconf automake libtool pkg-config
+RUN apt-get install -y build-essential autoconf automake libtool pkg-config \
+                libupnp-dev libgstreamer1.0-dev \
                 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
                 gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
-                gstreamer1.0-libav
+                gstreamer1.0-libav \
+                git \
+                uuid-runtime
 
-RUN apt-get install -y gstreamer1.0-alsa
-RUN apt-get install -y gstreamer1.0-pulseaudio
+RUN apt-get install -y gstreamer1.0-alsa gstreamer1.0-pulseaudio
 
-RUN apt-get install -y --no-install-recommends alsa-utils
-RUN apt-get install -y --no-install-recommends pulseaudio-utils
+RUN apt-get install -y --no-install-recommends alsa-utils pulseaudio-utils
 
-RUN apt-get install -y git
+# RUN apt-get install -y git
 
-RUN apt-get install -y uuid-runtime
+# RUN apt-get install -y uuid-runtime
 
 RUN mkdir -p /app/source
 WORKDIR /app/source
@@ -33,34 +35,38 @@ WORKDIR /
 
 RUN rm -rf /app/source
 
-RUN apt-get remove -y build-essential autoconf automake libtool pkg-config
-RUN apt-get remove -y git
+RUN apt-get remove -y build-essential autoconf automake libtool pkg-config \
+        libgstreamer1.0-dev \
+        git
 
 RUN apt-get autoremove -y
 
 RUN rm -rf /var/lib/apt/lists/*
 
 FROM scratch
-COPY --from=BASE / /
+COPY --from=base / /
 
 LABEL maintainer="GioF71"
 LABEL source="https://github.com/GioF71/gmrender-resurrect-docker"
 
 VOLUME /config
+VOLUME /fifo
 
-ENV FRIENDLY_NAME ""
-ENV UUID ""
-ENV GSTOUT_AUDIOSINK ""
-ENV GSTOUT_AUDIODEVICE ""
-ENV GSTOUT_INITIAL_VOLUME_DB ""
+ENV FRIENDLY_NAME=""
+ENV UUID=""
+ENV GSTOUT_AUDIOSINK=""
+ENV GSTOUT_AUDIODEVICE=""
+ENV GSTOUT_AUDIOPIPE=""
+ENV GSTOUT_INITIAL_VOLUME_DB=""
+ENV NETWORK_INTERFACE=""
 
-ENV USER_MODE ""
-ENV PUID ""
-ENV PGID ""
-ENV AUDIO_GID ""
+ENV USER_MODE=""
+ENV PUID=""
+ENV PGID=""
+ENV AUDIO_GID=""
 
-ENV CARD_NAME ""
-ENV CARD_INDEX ""
+ENV CARD_NAME=""
+ENV CARD_INDEX=""
 
 RUN mkdir -p /app/assets
 COPY app/assets/pulse-client-template.conf /app/assets/pulse-client-template.conf
