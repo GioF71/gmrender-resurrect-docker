@@ -137,13 +137,17 @@ if [[ "${current_user_id}" == "0" && (! (${USER_MODE^^} == "NO" || ${USER_MODE^^
     fi
 fi
 
+echo "GSTOUT_AUDIOSINK=[${GSTOUT_AUDIOSINK}]"
 alsa_mode=0
-if [[ "${GSTOUT_AUDIOSINK}^^" == "ALSA" ]] || [[ "${GSTOUT_AUDIOSINK}^^" == "ALSASINK" ]]; then
+if [[ "${GSTOUT_AUDIOSINK^^}" == "ALSA" ]] || [[ "${GSTOUT_AUDIOSINK^^}" == "ALSASINK" ]]; then
     alsa_mode=1
 fi
+echo "alsa_mode=[${alsa_mode}]"
 
 if [[ $alsa_mode -eq 1 ]]; then
     if [[ -n "${CARD_NAME}" ]] || [[ -n "${CARD_INDEX}" ]]; then
+        echo "CARD_NAME=[${CARD_NAME}]"
+        echo "CARD_INDEX=[${CARD_INDEX}]"
         if [[ $current_user_id -eq 0 ]]; then
             if [ -f "/etc/asound.conf" ]; then
                 echo "File /etc/asound.conf already exists, we will not be overwriting it."
@@ -177,6 +181,8 @@ if [[ $alsa_mode -eq 1 ]]; then
             echo "Cannot set alsa device if not running as root"
             exit 2
         fi
+    else
+        echo "No CARD_NAME or CARD_INDEX specified."
     fi
 fi
 

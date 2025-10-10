@@ -81,12 +81,13 @@ services:
 
 ### Examples
 
-Find a few sample configurations [here](https://github.com/GioF71/gmrender-resurrect-docker/tree/master/examples/).  
+Find a few [sample configurations here](https://github.com/GioF71/gmrender-resurrect-docker/tree/master/examples/).  
 
 ## Changelog
 
 DATE|DESCRIPTION
 :---|:---
+2025-10-10|Fix automatic creation of `/etc/asound.conf`
 2025-02-19|Add more configuration examples for pulse and pipe output
 2025-02-19|Add support for specifying network interface (`-I`) using new variable NETWORK_INTERFACE
 2025-02-19|Add support for LOGFILE
